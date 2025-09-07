@@ -9,7 +9,7 @@ internal static class IGZipBase
 {
     private const string NativeLib = "isal";
 
-    internal const int InflateStateStructSize = 128 * 1024; // sizeof(inflate_state): 87368 AFAIK (Linux, Mac)
+    public const int InflateStateStructSize = 86 * 1024; // ≥ sizeof(inflate_state): 87368 (Linux, Mac)
 
     public enum DecompResult
     {
@@ -140,6 +140,9 @@ internal static class IGZipBase
     const int HUFF_CODE_LARGE_LONG_ALIGNED = (L_SIZE + (-L_SIZE & 0xf));
     const int HUFF_CODE_SMALL_LONG_ALIGNED = (S_SIZE + (-S_SIZE & 0xf));
 
+    const int ISAL_DEF_MAX_HDR_SIZE = 328;
+    const int ISAL_DEF_HIST_SIZE = 32 * IGZIP_K;
+    const int ISAL_LOOK_AHEAD = (DEF_MAX_MATCH + 31) & ~31;
 
     /** @brief Large lookup table for decoding huffman codes */
     [StructLayout(LayoutKind.Sequential)]
@@ -196,6 +199,26 @@ internal static class IGZipBase
         uint bfinal; //!< Flag identifying final block
         public GzipFlags crc_flag; //!< Flag identifying whether to track of crc
         public uint crc; //!< Contains crc or adler32 of output if crc_flag is set
+        uint HistBits; // Log base 2 of maximum lookback distance
+        /*
+        union {
+                   int32_t type0_block_len; //!< Length left to read of type 0 block when outbuffer
+                                            //!< overflow occurred
+                   int32_t count;           //!< Count of bytes remaining to be parsed
+                   uint32_t dict_id;
+           };
+         */
+        int Type0BlockLen; // Length left to read of type 0 block when outbuffer overflow occurred
+        int WriteOverflowLits;
+        int WriteOverflowLen;
+        int CopyOverflowLength; // Length left to copy when outbuffer overflow occurred
+        int CopyOverflowDistance; // Lookback distance when outbuffer overflow occurred
+        short WrapperFlag;
+        short TmpInSize; // Number of bytes in tmp_in_buffer
+        int TmpOutValid; // Number of bytes in tmp_out_buffer
+        int TmpOutProcessed; // Number of bytes processed in tmp_out_buffer
+        unsafe fixed byte TmpInBuffer[ISAL_DEF_MAX_HDR_SIZE]; // Temporary buffer containing data from the input stream
+        unsafe fixed byte TmpOutBuffer[2 * ISAL_DEF_HIST_SIZE + ISAL_LOOK_AHEAD]; // Temporary buffer containing data from the output stream
     }
 
     private static string? _realLibraryName;
@@ -229,7 +252,7 @@ internal static class IGZipBase
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            _realLibraryName = "isal.dll";
+            _realLibraryName = "isa-l.dll";
         }
         else
         {

@@ -6,17 +6,33 @@ public static class IGzip
 {
     public const int MaxSize = 16 * 1024 * 1024;
 
-    public static int Inflate(ReadOnlySpan<byte> input, byte[] output, int offset = 0)
+    /// <summary>
+    /// Decompresses the provided compressed input data and writes the decompressed output to the provided output buffer.
+    /// </summary>
+    /// <param name="input">The compressed data to be decompressed, provided as a read-only span of bytes.</param>
+    /// <param name="output">The buffer where the decompressed data will be written.</param>
+    /// <param name="offset">Optional offset into the output buffer at which to start writing the decompressed data.</param>
+    /// <param name="streamSpace">Optional buffer used for internal state management. Reset by this method.</param>
+    /// <returns>The total number of bytes written to the output buffer.</returns>
+    /// <exception cref="Exception">Thrown when internal validation fails (e.g., if the offset of certain fields does not match expectations).</exception>
+    /// <exception cref="OutputBufferNotBigEnoughException">Thrown when the output buffer is not large enough to contain the decompressed data.</exception>
+    public static int Inflate(ReadOnlySpan<byte> input, byte[] output, int offset = 0, byte[]? streamSpace = null)
     {
-        if (Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "crc_flag") != 21172)
+        if (Marshal.SizeOf<IGZipBase.InflateStateStart>() != 87368)
         {
-            throw new Exception("Offset of crc_flag is not 21172");
+            throw new Exception(
+                $"Size of InflateStateStart is {Marshal.SizeOf<IGZipBase.InflateStateStart>()}, not 87368");
+        }
+        if (Marshal.OffsetOf<IGZipBase.InflateStateStart>("crc_flag") != 21172)
+        {
+            throw new Exception(
+                $"Offset of crc_flag is {Marshal.OffsetOf<IGZipBase.InflateStateStart>("crc_flag")}, not 21172");
         }
 
+        streamSpace ??= new byte[IGZipBase.InflateStateStructSize];
         int total;
         unsafe
         {
-            byte[] streamSpace = new byte[IGZipBase.InflateStateStructSize];
             fixed (byte* pStreamSpace = streamSpace)
             fixed (byte* pInput = input)
             fixed (byte* pOutput = output)
@@ -38,7 +54,13 @@ public static class IGzip
                 Console.WriteLine($"crc_flag: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "crc_flag")}");
                 var result = (IGZipBase.DecompResult)IGZipBase.Inflate(state);
                 if (result != IGZipBase.DecompResult.DecompOk /*&& result != IGZipBase.DecompResult.EndInput*/)
+                {
                     throw new Exception($"Decompression failed with error code {result}");
+                }
+                if (state->avail_in != 0)
+                {
+                    throw new OutputBufferNotBigEnoughException();
+                }
                 total = state->total_out;
             }
         }

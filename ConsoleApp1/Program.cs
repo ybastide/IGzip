@@ -1,10 +1,11 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿Console.WriteLine("Hello, World!");
 byte[] compressed;
 try
 {
-    compressed = File.ReadAllBytes("fixtures/Gorgosaurus.gz");
-} catch (System.IO.DirectoryNotFoundException)
+    var path = args.Length > 0 ? args[0] : "fixtures/Gorgosaurus.gz";
+    compressed = File.ReadAllBytes(path);
+}
+catch (DirectoryNotFoundException)
 {
     compressed = File.ReadAllBytes("../../../../TestIGzip/fixtures/Gorgosaurus.gz");
 }
