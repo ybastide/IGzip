@@ -105,4 +105,9 @@ public static class IGzip
 public class DecompressionException(IGzip.DecompResult result) : Exception
 {
     public IGzip.DecompResult Result { get; } = result;
+    
+    public override string ToString()
+    {
+        return $"Decompression failed with result: {Result}";
+    }
 }
