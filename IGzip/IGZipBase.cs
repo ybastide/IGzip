@@ -9,6 +9,26 @@ internal static class IGZipBase
 {
     private const string NativeLib = "isal";
 
+    public const int InflateStateStructSize = 87368; // sizeof(inflate_state) on Linux, macOS and Windows (x64)
+
+    // /* Inflate Return values */
+    public enum DecompResult
+    {
+        DecompOk = 0, // No errors encountered while decompressing
+        EndInput = 1, // End of input reached
+        OutOverflow = 2, // End of output reached
+        NameOverflow = 3, // End of gzip name buffer reached
+        CommentOverflow = 4, // End of gzip comment buffer reached
+        ExtraOverflow = 5, // End of extra buffer reached
+        NeedDict = 6, // Stream needs a dictionary to continue
+        InvalidBlock = -1, // Invalid deflate block found
+        InvalidSymbol = -2, // Invalid deflate symbol found
+        InvalidLookback = -3, // Invalid lookback distance found
+        InvalidWrapper = -4, // Invalid gzip/zlib wrapper found
+        UnsupportedMethod = -5, // Gzip/zlib wrapper specifies unsupported compress method
+        IncorrectChecksum = -6, // Incorrect checksum found
+    }
+
     /******************************************************************************/
     /* Deflate Compression Standard Defines */
     /******************************************************************************/

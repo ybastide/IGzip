@@ -48,8 +48,6 @@ public static class IGzip
 
     public const int MaxSize = 16 * 1024 * 1024;
 
-    public const int StreamSpaceSize = 86 * 1024; // ≥ sizeof(inflate_state): 87368 (Linux, Mac)
-
     /// <summary>
     /// Size of the buffer to pass as <c>streamSpace</c> to <see cref="Inflate"/> so it can reuse
     /// internal state across calls instead of allocating one per call.
@@ -74,9 +72,9 @@ public static class IGzip
     /// </exception>
     public static int Inflate(ReadOnlySpan<byte> input, byte[] output, int offset = 0, byte[]? streamSpace = null)
     {
-        if (Marshal.SizeOf<IGZipBase.InflateStateStart>() != 87368)
+        if (Marshal.SizeOf<IGZipBase.InflateStateStart>() != StreamSpaceSize)
             throw new Exception(
-                $"Size of InflateStateStart is {Marshal.SizeOf<IGZipBase.InflateStateStart>()}, not 87368");
+                $"Size of InflateStateStart is {Marshal.SizeOf<IGZipBase.InflateStateStart>()}, not {StreamSpaceSize}");
         if (Marshal.OffsetOf<IGZipBase.InflateStateStart>("crc_flag") != 21172)
             throw new Exception(
                 $"Offset of crc_flag is {Marshal.OffsetOf<IGZipBase.InflateStateStart>("crc_flag")}, not 21172");
