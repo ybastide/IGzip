@@ -7,6 +7,12 @@ public static class IGzip
     public const int MaxSize = 16 * 1024 * 1024;
 
     /// <summary>
+    /// Size of the buffer to pass as <c>streamSpace</c> to <see cref="Inflate"/> so it can reuse
+    /// internal state across calls instead of allocating one per call.
+    /// </summary>
+    public const int StreamSpaceSize = IGZipBase.InflateStateStructSize;
+
+    /// <summary>
     /// Decompresses the provided compressed input data and writes the decompressed output to the provided output buffer.
     /// </summary>
     /// <param name="input">The compressed data to be decompressed, provided as a read-only span of bytes.</param>
@@ -45,13 +51,6 @@ public static class IGzip
                 state->avail_out = output.Length - offset;
                 state->next_out = pOutput + offset;
                 state->crc_flag = IGZipBase.GzipFlags.Gzip;
-                Console.WriteLine($"next_out: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "next_out")}");
-                Console.WriteLine($"avail_out: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "avail_out")}");
-                Console.WriteLine($"total_out: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "total_out")}");
-                Console.WriteLine($"next_in: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "next_in")}");
-                Console.WriteLine($"read_in: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "read_in")}");
-                Console.WriteLine($"avail_in: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "avail_in")}");
-                Console.WriteLine($"crc_flag: {Marshal.OffsetOf(typeof(IGZipBase.InflateStateStart), "crc_flag")}");
                 var result = (IGZipBase.DecompResult)IGZipBase.Inflate(state);
                 if (result != IGZipBase.DecompResult.DecompOk /*&& result != IGZipBase.DecompResult.EndInput*/)
                 {
