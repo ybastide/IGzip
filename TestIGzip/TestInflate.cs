@@ -10,6 +10,6 @@ public class TestInflate(ITestOutputHelper testOutputHelper)
         var output = new byte[IGzip.IGzip.MaxSize];
         var size = IGzip.IGzip.Inflate(compressed, output);
         testOutputHelper.WriteLine($"Input size: {compressed.Length}; output size: {size}");
-        Console.WriteLine($"Input size: {compressed.Length}; output size: {size}");
+        Assert.Equal(333_228, size);
     }
 }
